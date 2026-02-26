@@ -34,6 +34,13 @@ npx expo install react-native-liveline @shopify/react-native-skia react-native-r
 | `react-native-gesture-handler` | `>=2.0.0` |
 | `@shopify/react-native-skia` | `>=2.0.0` |
 
+## Development
+
+```bash
+bun install
+bun run typecheck
+```
+
 ### Required setup
 
 `react-native-reanimated` requires its Babel plugin. In `babel.config.js`:

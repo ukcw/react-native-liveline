@@ -3,13 +3,13 @@
 ## Prerequisites
 
 - Node.js 18+
-- pnpm 10+
+- Bun 1.3+
 
 ## Local development
 
 ```bash
-pnpm install
-pnpm --filter react-native-liveline typecheck
+bun install
+bun run typecheck
 ```
 
 ## Pull requests
