@@ -1,0 +1,65 @@
+{
+  "name": "react-native-liveline",
+  "version": "0.1.0",
+  "description": "Real-time animated charts for React Native with Skia and Reanimated.",
+  "keywords": [
+    "react-native",
+    "chart",
+    "line-chart",
+    "candlestick",
+    "skia",
+    "reanimated",
+    "real-time"
+  ],
+  "license": "MIT",
+  "author": "ukcw",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ukcw/react-native-liveline.git"
+  },
+  "homepage": "https://github.com/ukcw/react-native-liveline#readme",
+  "bugs": {
+    "url": "https://github.com/ukcw/react-native-liveline/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
+  "main": "./src/index.ts",
+  "react-native": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./Liveline": "./src/Liveline.tsx",
+    "./types": "./src/types.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run typecheck"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.9",
+    "typescript": "~5.9.3"
+  },
+  "peerDependencies": {
+    "@shopify/react-native-skia": ">=2.0.0",
+    "react": ">=18",
+    "react-native": ">=0.79",
+    "react-native-gesture-handler": ">=2.0.0",
+    "react-native-reanimated": ">=3.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@10.23.0",
+  "publishConfig": {
+    "access": "public"
+  }
+}
