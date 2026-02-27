@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Skia, usePathValue } from "@shopify/react-native-skia";
 import {
-  runOnJS,
   useAnimatedReaction,
   useDerivedValue,
   useFrameCallback,
@@ -99,7 +98,6 @@ const PAUSE_CATCHUP_SPEED_FAST = 0.22;
 const PULSE_INTERVAL_MS = 1500;
 const PULSE_DURATION_MS = 900;
 const SCRUB_LERP_SPEED = 0.12;
-const HOVER_EMIT_INTERVAL_MS = 50;
 const HOVER_EMIT_VALUE_EPS = 1e-6;
 const HOVER_EMIT_TIME_EPS = 1e-6;
 const CHANGE_VALUE_EPS = 1e-6;
@@ -191,7 +189,7 @@ interface EngineInput {
   dataTransitionDurationMs?: number;
   dataTransitionKey?: number;
   valueMomentumColor?: boolean;
-  onHover?: (point: HoverPoint | null) => void;
+  onHoverWorklet?: (point: HoverPoint | null) => void;
   badgeCharWidth?: number;
   axisCharWidth?: number;
   seriesLabelCharWidth?: number;
@@ -473,7 +471,7 @@ export function useLivelineEngine(input: EngineInput) {
     dataTransitionDurationMs = DEFAULT_DATA_TRANSITION_DURATION_MS,
     dataTransitionKey = 0,
     valueMomentumColor = false,
-    onHover,
+    onHoverWorklet,
     badgeCharWidth = 6.8,
     axisCharWidth = 6.2,
     seriesLabelCharWidth = 5.8,
@@ -501,7 +499,7 @@ export function useLivelineEngine(input: EngineInput) {
   const resolvedCrosshairTimeFormatPreset: TimeFormatPreset =
     crosshairTimeFormatPreset ?? resolvedTimeFormatPreset;
 
-  const hasOnHover = typeof onHover === "function";
+  const hasOnHoverWorklet = typeof onHoverWorklet === "function";
 
   // Memo justified: packPoints sorts + allocates, and `value` changes
   // every tick while `data` reference is stable between new data batches.
@@ -652,9 +650,8 @@ export function useLivelineEngine(input: EngineInput) {
   const hoverTimeSecSV = useSharedValue(0);
   const hoverValueTextSV = useSharedValue("");
   const hoverTimeTextSV = useSharedValue("");
-  const hoverEmitAtSV = useSharedValue(0);
-  const hoverEmitTimeSV = useSharedValue(Number.NaN);
-  const hoverEmitValueSV = useSharedValue(Number.NaN);
+  const hoverWorkletEmitTimeSV = useSharedValue(Number.NaN);
+  const hoverWorkletEmitValueSV = useSharedValue(Number.NaN);
   const scrubAmountSV = useSharedValue(0);
   const crosshairOpacitySV = useSharedValue(0);
 
@@ -1038,6 +1035,12 @@ export function useLivelineEngine(input: EngineInput) {
     );
     if (scrubAmountSV.value < 0.01) scrubAmountSV.value = 0;
     if (scrubAmountSV.value > 0.99) scrubAmountSV.value = 1;
+    if (!hoverActiveSV.value) {
+      // Reset emit cache on scrub end so repeated taps at the same point
+      // still emit callbacks when a new scrub gesture starts.
+      hoverWorkletEmitTimeSV.value = Number.NaN;
+      hoverWorkletEmitValueSV.value = Number.NaN;
+    }
 
     const chartReveal = chartRevealSV.value;
     const isMultiNow = isMultiSeriesSV.value > 0.5;
@@ -1666,28 +1669,26 @@ export function useLivelineEngine(input: EngineInput) {
         hoverTimeTextSV.value = ch.timeText;
         crosshairOpacitySV.value = ch.opacity;
 
-        if (
-          hoverActiveSV.value &&
-          hasOnHover &&
-          frame.timeSinceFirstFrame - hoverEmitAtSV.value > HOVER_EMIT_INTERVAL_MS
-        ) {
-          const timeChanged =
-            !Number.isFinite(hoverEmitTimeSV.value) ||
-            Math.abs(ch.ht - hoverEmitTimeSV.value) > HOVER_EMIT_TIME_EPS;
-          const valueChanged =
-            !Number.isFinite(hoverEmitValueSV.value) ||
-            Math.abs(ch.hv - hoverEmitValueSV.value) > HOVER_EMIT_VALUE_EPS;
-          if (timeChanged || valueChanged) {
-            hoverEmitAtSV.value = frame.timeSinceFirstFrame;
-            hoverEmitTimeSV.value = ch.ht;
-            hoverEmitValueSV.value = ch.hv;
-            const out: HoverPoint = {
-              x: ch.hx,
-              y: ch.hy,
-              time: ch.ht,
-              value: ch.hv,
-            };
-            runOnJS(onHover as (point: HoverPoint | null) => void)(out);
+        const out: HoverPoint = {
+          x: ch.hx,
+          y: ch.hy,
+          time: ch.ht,
+          value: ch.hv,
+        };
+
+        if (hoverActiveSV.value && hasOnHoverWorklet) {
+          const workletTimeChanged =
+            !Number.isFinite(hoverWorkletEmitTimeSV.value) ||
+            Math.abs(ch.ht - hoverWorkletEmitTimeSV.value) >
+              HOVER_EMIT_TIME_EPS;
+          const workletValueChanged =
+            !Number.isFinite(hoverWorkletEmitValueSV.value) ||
+            Math.abs(ch.hv - hoverWorkletEmitValueSV.value) >
+              HOVER_EMIT_VALUE_EPS;
+          if (workletTimeChanged || workletValueChanged) {
+            hoverWorkletEmitTimeSV.value = ch.ht;
+            hoverWorkletEmitValueSV.value = ch.hv;
+            (onHoverWorklet as (point: HoverPoint | null) => void)(out);
           }
         }
       } else {
@@ -2154,6 +2155,29 @@ export function useLivelineEngine(input: EngineInput) {
               padding.top +
               (1 - (crosshairValue - crosshairMin) / crosshairSpan) *
                 innerHeight;
+
+            const out: HoverPoint = {
+              x: hx,
+              y: hoverYSV.value,
+              time: ht,
+              value: crosshairValue,
+            };
+
+            if (hoverActiveSV.value && hasOnHoverWorklet) {
+              const workletTimeChanged =
+                !Number.isFinite(hoverWorkletEmitTimeSV.value) ||
+                Math.abs(ht - hoverWorkletEmitTimeSV.value) >
+                  HOVER_EMIT_TIME_EPS;
+              const workletValueChanged =
+                !Number.isFinite(hoverWorkletEmitValueSV.value) ||
+                Math.abs(crosshairValue - hoverWorkletEmitValueSV.value) >
+                  HOVER_EMIT_VALUE_EPS;
+              if (workletTimeChanged || workletValueChanged) {
+                hoverWorkletEmitTimeSV.value = ht;
+                hoverWorkletEmitValueSV.value = crosshairValue;
+                (onHoverWorklet as (point: HoverPoint | null) => void)(out);
+              }
+            }
           }
 
           // Crosshair opacity with live-dot fade

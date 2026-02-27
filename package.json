@@ -1,6 +1,6 @@
 {
   "name": "react-native-liveline",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Real-time animated charts for React Native with Skia and Reanimated.",
   "keywords": [
     "react-native",
@@ -42,7 +42,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run typecheck"
+    "prepublishOnly": "bun run typecheck",
+    "example:start": "cd example && bun run start",
+    "example:typecheck": "cd example && bun run typecheck"
   },
   "devDependencies": {
     "@types/react": "^19.2.9",

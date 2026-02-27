@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "React Native Liveline Example",
+    "slug": "react-native-liveline-example",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true
+  }
+}

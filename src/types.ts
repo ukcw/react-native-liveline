@@ -157,7 +157,8 @@ export interface LivelineProps {
   formatCrosshairTimeWorklet?: (tMs: number, windowSecs: number) => string;
   lerpSpeed?: number;
   padding?: Padding;
-  onHover?: (point: HoverPoint | null) => void;
+  // UI-thread callback. Must be a worklet function when provided.
+  onHoverWorklet?: (point: HoverPoint | null) => void;
   cursor?: string;
 
   mode?: "line" | "candle";

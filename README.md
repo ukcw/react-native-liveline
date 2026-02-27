@@ -41,6 +41,17 @@ bun install
 bun run typecheck
 ```
 
+## Example App
+
+This repo includes an Expo demo app at `example/` that mirrors the app repo's Liveline dev screen.
+
+```bash
+cd example
+bun install
+npx expo install react-native-gesture-handler react-native-reanimated @shopify/react-native-skia react-native-safe-area-context
+bun run start
+```
+
 ### Required setup
 
 `react-native-reanimated` requires its Babel plugin. In `babel.config.js`:
@@ -169,7 +180,7 @@ The chart fills its parent container. Give the parent an explicit height.
 | `formatCrosshairTimeWorklet` | `(tMs, windowSecs) => string` | — | Crosshair formatter override |
 | `lerpSpeed` | `number` | `0.08` | Interpolation speed |
 | `padding` | `Padding` | `{ top: 12, right: 80, bottom: 28, left: 12 }` | Chart padding override |
-| `onHover` | `(point: HoverPoint \| null) => void` | — | Crosshair hover callback |
+| `onHoverWorklet` | `(point: HoverPoint \| null) => void` | — | UI-thread crosshair hover callback (worklet) |
 | `style` | `StyleProp<ViewStyle>` | — | Container style |
 
 ## Examples

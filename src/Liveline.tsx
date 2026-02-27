@@ -1398,7 +1398,7 @@ export function Liveline({
   formatCrosshairTimeWorklet,
   lerpSpeed = 0.08,
   padding: paddingOverride,
-  onHover,
+  onHoverWorklet,
   mode = "line",
   candles: candlesProp,
   candleWidth: candleWidthProp,
@@ -1714,7 +1714,7 @@ export function Liveline({
     dataTransitionDurationMs,
     dataTransitionKey,
     valueMomentumColor,
-    onHover,
+    onHoverWorklet,
     badgeCharWidth,
     axisCharWidth,
     seriesLabelCharWidth,
@@ -2126,8 +2126,8 @@ export function Liveline({
         .onFinalize((event) => {
           if (scrub) {
             hoverActiveSV.value = false;
-            if (onHover) {
-              runOnJS(onHover)(null);
+            if (onHoverWorklet) {
+              onHoverWorklet(null);
             }
           } else {
             // Store velocity for momentum
@@ -2139,7 +2139,7 @@ export function Liveline({
       scrub,
       hoverActiveSV,
       hoverXSV,
-      onHover,
+      onHoverWorklet,
       panVelocitySV,
       panStartOffsetSV,
       domainOffsetSV,
