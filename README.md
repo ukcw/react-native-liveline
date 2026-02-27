@@ -2,6 +2,10 @@
 
 Real-time animated charts for React Native. Line, candlestick, and multi-series modes, rendered with Skia and driven by Reanimated worklets.
 
+## Status
+
+`react-native-liveline` is currently in `alpha`. Breaking API changes may ship between minor releases while the API surface settles.
+
 ## Features
 
 - 60fps/120fps-friendly animation pipeline on the UI thread
