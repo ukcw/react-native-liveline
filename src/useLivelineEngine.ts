@@ -2149,6 +2149,10 @@ export function useLivelineEngine(input: EngineInput) {
             const crosshairValue = isLineModeCrosshair
               ? lineModeValue
               : hovered.close;
+            // Keep hover readout state in sync in candle mode so
+            // valueDisplayMode="hover" uses the hovered candle value.
+            hoverTimeSecSV.value = ht;
+            hoverValueSV.value = crosshairValue;
             const crosshairMin = isLineModeCrosshair ? rangeMin : cRangeMin;
             const crosshairSpan = isLineModeCrosshair
               ? Math.max(rangeSpan, 1e-6)
