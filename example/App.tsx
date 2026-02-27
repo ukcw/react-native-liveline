@@ -1,15 +1,16 @@
 import * as Haptics from "expo-haptics";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
   Liveline,
+  type CandlePoint,
   type HoverPoint,
   type LivelinePoint,
   type WindowOption,
-} from "../src";
+} from "react-native-liveline";
 
 interface FeedState {
   points: LivelinePoint[];
@@ -39,6 +40,8 @@ const CRYPTO_PROFILE: ScenarioProfile = {
   spikeChance: 0.018,
   spikeBps: 65,
 };
+
+const CANDLE_WIDTH_SECS = 15;
 
 function seededNoise(seed: number) {
   const raw = Math.sin(seed * 12.9898) * 43758.5453;
@@ -149,10 +152,48 @@ function formatChartValueWorklet(v: number): string {
   return v.toFixed(2);
 }
 
+function deriveCandles(
+  points: LivelinePoint[],
+  candleWidthSecs: number,
+): { candles: CandlePoint[]; liveCandle?: CandlePoint } {
+  if (points.length === 0) {
+    return { candles: [] };
+  }
+
+  const candles: CandlePoint[] = [];
+  let current: CandlePoint | undefined;
+
+  for (const point of points) {
+    const bucket = Math.floor(point.time / candleWidthSecs) * candleWidthSecs;
+
+    if (!current || current.time !== bucket) {
+      if (current) candles.push(current);
+      current = {
+        time: bucket,
+        open: point.value,
+        high: point.value,
+        low: point.value,
+        close: point.value,
+      };
+      continue;
+    }
+
+    current.high = Math.max(current.high, point.value);
+    current.low = Math.min(current.low, point.value);
+    current.close = point.value;
+  }
+
+  return {
+    candles: candles.slice(-320),
+    liveCandle: current,
+  };
+}
+
 export default function App() {
   const [cryptoWindowSecs, setCryptoWindowSecs] = useState(
     CRYPTO_WINDOWS[0].secs,
   );
+  const [lineMode, setLineMode] = useState(true);
   const scrubStateRef = useRef({
     lastPointIndex: -1,
   });
@@ -172,6 +213,11 @@ export default function App() {
   useEffect(() => {
     pointsRef.current = feed.points;
   }, [feed.points]);
+
+  const candleData = useMemo(
+    () => deriveCandles(feed.points, CANDLE_WIDTH_SECS),
+    [feed.points],
+  );
 
   const handleHover = useCallback(
     (point: HoverPoint | null) => {
@@ -196,6 +242,10 @@ export default function App() {
     runOnJS(handleHover)(point);
   }, [handleHover]);
 
+  const handleModeChange = useCallback((nextMode: "line" | "candle") => {
+    setLineMode(nextMode === "line");
+  }, []);
+
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={styles.flex}>
@@ -204,6 +254,14 @@ export default function App() {
             <Liveline
               data={feed.points}
               value={feed.value}
+              mode="candle"
+              candles={candleData.candles}
+              liveCandle={candleData.liveCandle}
+              candleWidth={CANDLE_WIDTH_SECS}
+              lineMode={lineMode}
+              lineData={feed.points}
+              lineValue={feed.value}
+              onModeChange={handleModeChange}
               theme="light"
               color="#2563eb"
               momentum

@@ -1465,6 +1465,7 @@ export function useLivelineEngine(input: EngineInput) {
       valueDisplayMode === "hover" && hoverActiveSV.value
         ? hoverValueSV.value
         : curDisplay;
+    const showTopReadout = !isMultiNow;
 
     // Only reformat when the displayed value changes at display precision.
     const roundedShownValue = Math.round(shownValue * 1e6) / 1e6;
@@ -1473,8 +1474,9 @@ export function useLivelineEngine(input: EngineInput) {
       const badgeText = formatWorkletValue(formatValueWorklet, curDisplay);
       badgeTextSV.value = badgeText;
       cachedBadgeTemplateSV.value = badgeText.replace(/[0-9]/g, "8");
-      // Web parity: top value display updates from single-series line mode only.
-      if (!isCandleNow && !isMultiNow) {
+      // Keep top readout active across line/candle modes; value/change are
+      // data-derived and should not depend on render mode.
+      if (showTopReadout) {
         valueTextSV.value = formatWorkletValue(
           formatValueWorklet,
           valueMomentumColor ? Math.abs(shownValue) : shownValue,
@@ -1482,7 +1484,7 @@ export function useLivelineEngine(input: EngineInput) {
       }
     }
 
-    if (!isCandleNow && !isMultiNow) {
+    if (showTopReadout) {
       const changeValue = shownValue - baselineValue;
       const changeSign =
         changeValue > CHANGE_VALUE_EPS
