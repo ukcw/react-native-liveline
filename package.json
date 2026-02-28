@@ -1,6 +1,6 @@
 {
   "name": "react-native-liveline",
-  "version": "0.3.0-alpha.3",
+  "version": "0.3.0-alpha.4",
   "description": "Real-time animated charts for React Native with Skia and Reanimated.",
   "keywords": [
     "react-native",

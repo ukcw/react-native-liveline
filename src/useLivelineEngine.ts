@@ -100,6 +100,7 @@ const PULSE_DURATION_MS = 900;
 const SCRUB_LERP_SPEED = 0.12;
 const HOVER_EMIT_VALUE_EPS = 1e-6;
 const HOVER_EMIT_TIME_EPS = 1e-6;
+const HOVER_EMIT_HX_EPS = 0.5;
 const CHANGE_VALUE_EPS = 1e-6;
 const INVALID_CHANGE_PCT = -1;
 const MOMENTUM_DECAY_PER_MS = 0.994;
@@ -652,6 +653,7 @@ export function useLivelineEngine(input: EngineInput) {
   const hoverTimeTextSV = useSharedValue("");
   const hoverWorkletEmitTimeSV = useSharedValue(Number.NaN);
   const hoverWorkletEmitValueSV = useSharedValue(Number.NaN);
+  const hoverWorkletEmitHxSV = useSharedValue(Number.NaN);
   const scrubAmountSV = useSharedValue(0);
   const crosshairOpacitySV = useSharedValue(0);
 
@@ -1040,6 +1042,7 @@ export function useLivelineEngine(input: EngineInput) {
       // still emit callbacks when a new scrub gesture starts.
       hoverWorkletEmitTimeSV.value = Number.NaN;
       hoverWorkletEmitValueSV.value = Number.NaN;
+      hoverWorkletEmitHxSV.value = Number.NaN;
     }
 
     const chartReveal = chartRevealSV.value;
@@ -1679,18 +1682,24 @@ export function useLivelineEngine(input: EngineInput) {
         };
 
         if (hoverActiveSV.value && hasOnHoverWorklet) {
-          const workletTimeChanged =
-            !Number.isFinite(hoverWorkletEmitTimeSV.value) ||
-            Math.abs(ch.ht - hoverWorkletEmitTimeSV.value) >
-              HOVER_EMIT_TIME_EPS;
-          const workletValueChanged =
-            !Number.isFinite(hoverWorkletEmitValueSV.value) ||
-            Math.abs(ch.hv - hoverWorkletEmitValueSV.value) >
-              HOVER_EMIT_VALUE_EPS;
-          if (workletTimeChanged || workletValueChanged) {
-            hoverWorkletEmitTimeSV.value = ch.ht;
-            hoverWorkletEmitValueSV.value = ch.hv;
-            (onHoverWorklet as (point: HoverPoint | null) => void)(out);
+          const hxMoved =
+            !Number.isFinite(hoverWorkletEmitHxSV.value) ||
+            Math.abs(ch.hx - hoverWorkletEmitHxSV.value) > HOVER_EMIT_HX_EPS;
+          if (hxMoved) {
+            const workletTimeChanged =
+              !Number.isFinite(hoverWorkletEmitTimeSV.value) ||
+              Math.abs(ch.ht - hoverWorkletEmitTimeSV.value) >
+                HOVER_EMIT_TIME_EPS;
+            const workletValueChanged =
+              !Number.isFinite(hoverWorkletEmitValueSV.value) ||
+              Math.abs(ch.hv - hoverWorkletEmitValueSV.value) >
+                HOVER_EMIT_VALUE_EPS;
+            if (workletTimeChanged || workletValueChanged) {
+              hoverWorkletEmitHxSV.value = ch.hx;
+              hoverWorkletEmitTimeSV.value = ch.ht;
+              hoverWorkletEmitValueSV.value = ch.hv;
+              (onHoverWorklet as (point: HoverPoint | null) => void)(out);
+            }
           }
         }
       } else {
@@ -2170,18 +2179,24 @@ export function useLivelineEngine(input: EngineInput) {
             };
 
             if (hoverActiveSV.value && hasOnHoverWorklet) {
-              const workletTimeChanged =
-                !Number.isFinite(hoverWorkletEmitTimeSV.value) ||
-                Math.abs(ht - hoverWorkletEmitTimeSV.value) >
-                  HOVER_EMIT_TIME_EPS;
-              const workletValueChanged =
-                !Number.isFinite(hoverWorkletEmitValueSV.value) ||
-                Math.abs(crosshairValue - hoverWorkletEmitValueSV.value) >
-                  HOVER_EMIT_VALUE_EPS;
-              if (workletTimeChanged || workletValueChanged) {
-                hoverWorkletEmitTimeSV.value = ht;
-                hoverWorkletEmitValueSV.value = crosshairValue;
-                (onHoverWorklet as (point: HoverPoint | null) => void)(out);
+              const hxMoved =
+                !Number.isFinite(hoverWorkletEmitHxSV.value) ||
+                Math.abs(hx - hoverWorkletEmitHxSV.value) > HOVER_EMIT_HX_EPS;
+              if (hxMoved) {
+                const workletTimeChanged =
+                  !Number.isFinite(hoverWorkletEmitTimeSV.value) ||
+                  Math.abs(ht - hoverWorkletEmitTimeSV.value) >
+                    HOVER_EMIT_TIME_EPS;
+                const workletValueChanged =
+                  !Number.isFinite(hoverWorkletEmitValueSV.value) ||
+                  Math.abs(crosshairValue - hoverWorkletEmitValueSV.value) >
+                    HOVER_EMIT_VALUE_EPS;
+                if (workletTimeChanged || workletValueChanged) {
+                  hoverWorkletEmitHxSV.value = hx;
+                  hoverWorkletEmitTimeSV.value = ht;
+                  hoverWorkletEmitValueSV.value = crosshairValue;
+                  (onHoverWorklet as (point: HoverPoint | null) => void)(out);
+                }
               }
             }
           }
